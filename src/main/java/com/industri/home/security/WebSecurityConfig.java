@@ -29,27 +29,35 @@ public class WebSecurityConfig {
     @Autowired
     private AuthEntryPointJwt unauthorizedHandler;
 
+    // @Bean
+    // public UserDetailsService userDetailsService() throws Exception{
+    // User.UserBuilder users = User.withDefaultPasswordEncoder();
+    // InMemoryUserDetailsManager manager = new InMemoryUserDetailsManager();
+    // manager.createUser(users.username("user").password("password").roles("USER").build());
+    // manager.createUser(users.username("admin").password("password").roles("USER","ADMIN").build());
+    // return manager;
+    // }
+
     @Bean
-    public UserDetailsService userDetailsService() throws Exception{
-        User.UserBuilder users = User.withDefaultPasswordEncoder();
-        InMemoryUserDetailsManager manager = new InMemoryUserDetailsManager();
-        manager.createUser(users.username("user").password("password").roles("USER").build());
-        manager.createUser(users.username("admin").password("password").roles("USER","ADMIN").build());
-        return manager;
+    public AuthTokenFilter authenticationJwtTokenFilter() {
+        return new AuthTokenFilter();
     }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.securityMatcher("/api/**").authorizeHttpRequests(authorize -> authorize
-                .anyRequest().hasRole("ADMIN")
-                ).httpBasic(Customizer.withDefaults());
+                .anyRequest().hasRole("ADMIN"))
+                .addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
-    public SecurityFilterChain formLoginFilterChain(HttpSecurity http) throws Exception{
-        http.authorizeHttpRequests(authorize -> authorize.anyRequest().authenticated())
-                .formLogin(Customizer.withDefaults());
-        return http.build();
-    }
+
+    // public SecurityFilterChain formLoginFilterChain(HttpSecurity http) throws
+    // Exception{
+    // http.authorizeHttpRequests(authorize ->
+    // authorize.anyRequest().authenticated())
+    // .formLogin(Customizer.withDefaults());
+    // return http.build();
+    // }
 
     @Bean
     AuthTokenFilter authTokenFilter() {
