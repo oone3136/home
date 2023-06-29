@@ -22,67 +22,68 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
 
-    @Autowired
-    AuthenticationManager authenticationManager;
+        @Autowired
+        AuthenticationManager authenticationManager;
 
-    @Autowired
-    UserServices service;
+        @Autowired
+        UserServices service;
 
-    @Autowired
-    PasswordEncoder passwordEncoder;
+        @Autowired
+        PasswordEncoder passwordEncoder;
 
-    @Autowired
-    private UserDetailsServiceImpl userDetailsServiceImpl;
+        @Autowired
+        private UserDetailsServiceImpl userDetailsServiceImpl;
 
-    @Autowired
-    JwtUtils jwtUtils;
+        @Autowired
+        JwtUtils jwtUtils;
 
-    @PostMapping("/signin")
-    public ResponseEntity<JwtResponse> authenticateUser(@RequestBody LoginRequest request) {
-        Authentication authentication = authenticationManager
-                .authenticate(new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
-        SecurityContextHolder.getContext()
-                .setAuthentication(authentication);
-        String token = jwtUtils.generateJwtToken(authentication);
-        String refreshToken = jwtUtils.generateRefresJwtToken(authentication);
-        UserDetailsImpl principal = (UserDetailsImpl) authentication.getPrincipal();
-        return ResponseEntity.ok()
-                .body(new JwtResponse(token, refreshToken, principal.getUsername(), principal.getEmail(),
-                        principal.getRoles()));
-    }
-
-    @PostMapping("/signup")
-    public User signup(@RequestBody SignupRequest request) {
-        User pengguna = new User();
-        pengguna.setId(request.getUsername());
-        pengguna.setEmail(request.getEmail());
-        pengguna.setPassword(passwordEncoder.encode(request.getPassword()));
-        pengguna.setNama(request.getNama());
-        pengguna.setRoles("user");
-        User created = service.create(pengguna);
-        return created;
-    }
-
-    @PostMapping("/refreshToken")
-    public ResponseEntity<JwtResponse> refreshToken(@RequestBody RefreshTokenRequest request) {
-        String token = request.getRefreshToken();
-        boolean valid = jwtUtils.validateJwtToken(token);
-        if (!valid) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        @PostMapping("/signin")
+        public ResponseEntity<JwtResponse> authenticateUser(@RequestBody LoginRequest request) {
+                Authentication authentication = authenticationManager
+                                .authenticate(new UsernamePasswordAuthenticationToken(request.getUsername(),
+                                                request.getPassword()));
+                // SecurityContextHolder.getContext()
+                // .setAuthentication(authentication);
+                String token = jwtUtils.generateJwtToken(authentication);
+                String refreshToken = jwtUtils.generateRefresJwtToken(authentication);
+                UserDetailsImpl principal = (UserDetailsImpl) authentication.getPrincipal();
+                return ResponseEntity.ok()
+                                .body(new JwtResponse(token, refreshToken, principal.getUsername(),
+                                                principal.getEmail(),
+                                                principal.getRoles()));
         }
 
-        String username = jwtUtils.getUserNameFromJwtToken(token);
-        UserDetailsImpl userDetailsImpl = (UserDetailsImpl) userDetailsServiceImpl.loadUserByUsername(username);
-        Authentication authentication = new UsernamePasswordAuthenticationToken(userDetailsImpl, null,
-                userDetailsImpl.getAuthorities());
-        String newToken = jwtUtils.generateJwtToken(authentication);
-        String refreshToken = jwtUtils.generateRefresJwtToken(authentication);
-        return ResponseEntity.ok(new JwtResponse(newToken, refreshToken, username, userDetailsImpl.getEmail(),
-                userDetailsImpl.getRoles()));
-    }
+        @PostMapping("/signup")
+        public User signup(@RequestBody SignupRequest request) {
+                User pengguna = new User();
+                pengguna.setId(request.getUsername());
+                pengguna.setEmail(request.getEmail());
+                pengguna.setPassword(passwordEncoder.encode(request.getPassword()));
+                pengguna.setNama(request.getNama());
+                pengguna.setRoles("user");
+                User created = service.create(pengguna);
+                return created;
+        }
+
+        @PostMapping("/refreshToken")
+        public ResponseEntity<JwtResponse> refreshToken(@RequestBody RefreshTokenRequest request) {
+                String token = request.getRefreshToken();
+                boolean valid = jwtUtils.validateJwtToken(token);
+                if (!valid) {
+                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+                }
+
+                String username = jwtUtils.getUserNameFromJwtToken(token);
+                UserDetailsImpl userDetailsImpl = (UserDetailsImpl) userDetailsServiceImpl.loadUserByUsername(username);
+                Authentication authentication = new UsernamePasswordAuthenticationToken(userDetailsImpl, null,
+                                userDetailsImpl.getAuthorities());
+                String newToken = jwtUtils.generateJwtToken(authentication);
+                String refreshToken = jwtUtils.generateRefresJwtToken(authentication);
+                return ResponseEntity.ok(new JwtResponse(newToken, refreshToken, username, userDetailsImpl.getEmail(),
+                                userDetailsImpl.getRoles()));
+        }
 }
